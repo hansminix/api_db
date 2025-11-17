@@ -1,0 +1,5 @@
+HOST
+A
+PTR
+CNAME
+TXT

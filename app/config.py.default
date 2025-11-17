@@ -1,0 +1,5 @@
+class Config:
+    SECRET_KEY = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    SQLALCHEMY_DATABASE_URI="mysql://user:password@localhost/database"
+
+
