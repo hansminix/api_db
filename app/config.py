@@ -5,19 +5,27 @@ class Config:
 
     #LDAP configuration
     # Hostname of your LDAP Server
-    LDAP_HOST = 'ad.mydomain.com'
+    LDAP_HOST = 'localhost'
     # Base DN of your directory
-    LDAP_BASE_DN = 'dc=mydomain,dc=com'
+    LDAP_BASE_DN = 'dc=hans,dc=home'
+
     # Users DN to be prepended to the Base DN
     LDAP_USER_DN = 'ou=users'
+
+    LDAP_SEARCH_FOR_GROUPS = False
+    #LDAP_GROUP_OBJECT_FILTER = '(objectclass=groupOfNames)'
     # Groups DN to be prepended to the Base DN
-    LDAP_GROUP_DN = 'ou=groups'
+    #'LDAP_GROUP_DN'] = 'ou=groups'
+
     # The RDN attribute for your user schema on LDAP
     LDAP_USER_RDN_ATTR = 'cn'
+
     # The Attribute you want users to authenticate to LDAP with.
-    LDAP_USER_LOGIN_ATTR = 'mail'
+    LDAP_USER_LOGIN_ATTR = 'cn'
+
     # The Username to bind to LDAP with
     LDAP_BIND_USER_DN = None
+
     # The Password to bind to LDAP with
     LDAP_BIND_USER_PASSWORD = None
 

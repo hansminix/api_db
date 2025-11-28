@@ -1,6 +1,7 @@
 from .extensions import db
 import sqlalchemy as sqldb
 from flask_admin.contrib.sqla import ModelView
+from flask_admin import AdminIndexView, expose
 from .config import Config
 from sqlalchemy.sql import func
 from wtforms.validators import Email, Regexp, DataRequired
@@ -8,7 +9,26 @@ from wtforms.validators import Email, Regexp, DataRequired
 from wtforms import SelectField, StringField
 from datetime import datetime
 from .config import Config
-import itertools
+from flask_login import UserMixin, current_user
+from flask_admin.menu import MenuLink
+
+# Declare an Object Model for the user, and make it comply with the
+# flask-login UserMixin mixin.
+class User(db.Model, UserMixin):
+    cn = db.Column(db.String(50), primary_key=True)
+    dn = db.Column(db.String(255), unique=True)
+    data = db.Column(db.Text)
+
+    def __init__(self, cn=None, dn=None, data=None):
+        self.cn = cn
+        self.dn = dn
+        self.data = data
+
+    def get_id(self):
+        return self.cn
+    
+    def __repr__(self):
+        return self.cn
 
 class groep(db.Model):
     __table_name__ = 'groep'
@@ -116,6 +136,22 @@ class ipaddressenview(ModelView):
         'ipaddress' : { 'label': 'IP adres'},
         'groep' : { 'label': 'Groep'},
         }
+
+class MyHomeView(AdminIndexView):
+    @expose('/')
+    def index(self):
+        return self.render('admin/index.html', current_user=current_user)
+
+class LoginMenuLink(MenuLink):
+
+    def is_accessible(self):
+        return not current_user.is_authenticated 
+
+
+class LogoutMenuLink(MenuLink):
+
+    def is_accessible(self):
+        return current_user.is_authenticated             
 
 """
 class objecttypesview(ModelView):
