@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<head>
+    <style>
+        div {
+        display: flex;
+        justify-content: center;
+        }
+
+        img {
+        width: 100%;
+        }
+    </style>
+  <title>Login page MSI API registrations</title>
+  <div margin: auto;><p><img src="/static/defensielogo.png" alt=""/></div>
+</head>
+<body>
+<form method="POST">
+<div>
+    <label>Username: {{ form.username() }}</label><br>
+</div>
+<div>
+    <label>Password: {{ form.password() }}</label><br>
+</div>
+<div>
+    {{ form.submit() }}
+    {{ form.hidden_tag() }}
+</div>
+</form>
+</body>
