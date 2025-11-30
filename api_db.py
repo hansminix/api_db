@@ -2,7 +2,6 @@ from app import create_app
 import logging
 from datetime import datetime
 from flask import request
-from flask_login import UserMixin
 
 logging.basicConfig(filename='error.log',level=logging.DEBUG)
 

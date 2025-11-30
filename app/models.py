@@ -1,16 +1,14 @@
 from .extensions import db
-import sqlalchemy as sqldb
 from flask_admin.contrib.sqla import ModelView
-from flask_admin import AdminIndexView, expose
+from flask_admin import AdminIndexView, expose, BaseView
 from .config import Config
-from sqlalchemy.sql import func
-from wtforms.validators import Email, Regexp, DataRequired
-#from wtforms_alchemy import Unique
-from wtforms import SelectField, StringField
-from datetime import datetime
+from wtforms.validators import Email
 from .config import Config
 from flask_login import UserMixin, current_user
 from flask_admin.menu import MenuLink
+from flask_ldap3_login.forms import LDAPLoginForm
+from flask_login import login_user, current_user
+from flask import redirect, url_for, request, flash
 
 # Declare an Object Model for the user, and make it comply with the
 # flask-login UserMixin mixin.
@@ -42,7 +40,7 @@ class groep(db.Model):
     
     def __repr__(self):
         return self.name 
-
+    
 class accounts(db.Model): 
     __table_name__ = 'accounts'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -90,6 +88,13 @@ class object_subtypes(db.Model):
     name = db.Column(db.String(100), nullable=False)
 """
 class groepview(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated  # eventueel ook rollen checken
+
+    def inaccessible_callback(self, name, **kwargs):
+        # Redirect naar login pagina
+        return redirect(url_for('login.index', next=request.url))    
+
     can_export = True
     form_columns = ['name', 'owner','emailaddress','description','documentation','software']
     column_labels = dict(name='Naam',emailaddress='Mailadres',description='Omschrijving',owner='Eigenaar',documentation='Documentatie',software='Software')
@@ -103,6 +108,13 @@ class groepview(ModelView):
         }
 
 class accountsview(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated  # eventueel ook rollen checken
+
+    def inaccessible_callback(self, name, **kwargs):
+        # Redirect naar login pagina
+        return redirect(url_for('login.index', next=request.url))    
+
     can_export = True
     form_columns = ['name','groep','einddatum']
     column_labels = dict(name='Naam',groep='Groep',einddatum='Einddatum')
@@ -114,6 +126,13 @@ class accountsview(ModelView):
         }
 
 class groeprechtenview(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated  # eventueel ook rollen checken
+
+    def inaccessible_callback(self, name, **kwargs):
+        # Redirect naar login pagina
+        return redirect(url_for('login.index', next=request.url))    
+
     can_export = True
     form_columns = ['object_name','object_type', 'object_sub', 'rwrechten','groep']
     column_labels = dict(object_name='Object',object_type='Type object',object_sub='Subtype',rwrechten='Read/write',groep='Groep')
@@ -129,6 +148,13 @@ class groeprechtenview(ModelView):
                     'object_sub': Config.object_subtypes}
 
 class ipaddressenview(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated  # eventueel ook rollen checken
+
+    def inaccessible_callback(self, name, **kwargs):
+        # Redirect naar login pagina
+        return redirect(url_for('login.index', next=request.url))    
+
     can_export = True
     form_columns = ['ipaddress','groep']
     column_labels = dict(ipaddress='IP adres',groep='Groep')
@@ -141,6 +167,29 @@ class MyHomeView(AdminIndexView):
     @expose('/')
     def index(self):
         return self.render('admin/index.html', current_user=current_user)
+
+class LoginView(BaseView):    
+    @expose('/', methods=["GET","POST"])
+    def index(self):
+        print(Config.LDAP_USER_LOGIN_ATTR)
+        # Instantiate a LDAPLoginForm which has a validator to check if the user
+        # exists in LDAP.
+        form = LDAPLoginForm()
+
+        if form.validate_on_submit():
+            # Successfully logged in, We can now access the saved user object
+            # via form.user.
+            login_user(form.user)  # Tell flask-login to log them in.
+            flash("U bent succesvol ingelogd.")
+            return redirect('/admin')  # Send them home
+        if form.errors:
+            flash('Fout bij inloggen, probeer opnieuw.', 'error')
+
+        return self.render('admin/login.html',form=form)
+
+    def is_accessible(self):
+        return not current_user.is_authenticated 
+
 
 class LoginMenuLink(MenuLink):
 

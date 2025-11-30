@@ -1,0 +1,25 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+{{ super() }}
+<form method="POST">
+<fieldset>
+    <div class="form-group">
+    <label class="col-form-label" for="Username" >
+        Username: 
+        <strong class="text-danger">*</strong>
+    </label>
+    {{form.username(class_="form-control")}}
+    <div class="form-group">
+    <label class="col-form-label" for="Username" >
+        Password: 
+        <strong class="text-danger">*</strong>
+    </label>
+    {{form.password(class_="form-control")}}
+    <input type="submit" class="btn btn-primary" value="Submit">
+</fieldset>
+<div>
+    {{ form.hidden_tag() }}
+</div>
+</form>
+{% endblock %}

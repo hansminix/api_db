@@ -7,7 +7,7 @@ from flask_admin import Admin
 from sqlalchemy.orm import configure_mappers
 from .extensions import db, admin
 from .models import groep, groeprechten, accounts, ipadressen, User,\
-    groepview, groeprechtenview, accountsview, ipaddressenview, MyHomeView, LoginMenuLink, LogoutMenuLink
+    groepview, groeprechtenview, accountsview, ipaddressenview, MyHomeView, LoginView, LogoutMenuLink
 from .index import index
 import pymysql
 pymysql.install_as_MySQLdb()
@@ -31,14 +31,13 @@ def create_app():
     admin.name='API Accounts'
     admin.init_app(app)
     configure_mappers()
+    admin.index_view=MyHomeView
     admin.add_view(groepview(groep,db.session, name='Groepen'))
     admin.add_view(accountsview(accounts,db.session,name="Accounts"))
     admin.add_view(ipaddressenview(ipadressen,db.session,name="IP Adressen"))
     admin.add_view(groeprechtenview(groeprechten,db.session, name='Groep rechten'))
+    admin.add_view(LoginView(name='Login',endpoint='login',url="/login"))
     admin.add_link(LogoutMenuLink(name='Logout', category='', url="/logout"))
-    admin.add_link(LoginMenuLink(name='Login', category='', url="/login"))
-
-    admin.index_view=MyHomeView
 
     #Initialize flask login
     login_manager = LoginManager()
@@ -66,7 +65,7 @@ def create_app():
             db.session.add(user)
             db.session.commit()
         return user
-    
+    """
     @app.route('/login', methods=['GET', 'POST'])
     def login():
         # Instantiate a LDAPLoginForm which has a validator to check if the user
@@ -80,7 +79,7 @@ def create_app():
             return redirect('/admin')  # Send them home
 
         return render_template('login.html', form=form)
-    
+    """
     @app.route('/logout',methods=['GET', 'POST'])
     @login_required
     def logout():

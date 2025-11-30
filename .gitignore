@@ -1,2 +1,7 @@
 venv
 app/__pycache__/
+api_db.sqlite
+flask.log
+audit.log
+ldaptest.py
+api_db.sqlite

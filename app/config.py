@@ -29,6 +29,7 @@ class Config:
     # The Password to bind to LDAP with
     LDAP_BIND_USER_PASSWORD = None
 
+    ACCES_GROUPS=['v5siabeheer']
     object_types=[]
     object_subtypes=[]
     with open('object_types.txt') as of:
