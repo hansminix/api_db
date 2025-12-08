@@ -1,13 +1,15 @@
 from flask import Flask, request, render_template, redirect
 from .config import Config
-from logging import getLogger
+from logging import getLogger, basicConfig, FileHandler, StreamHandler, Formatter
 from logging.config import fileConfig
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import Admin
 from sqlalchemy.orm import configure_mappers
-from .extensions import db, admin
+from .extensions import db, admin, migrate
 from .models import groep, groeprechten, accounts, ipadressen, User,\
     groepview, groeprechtenview, accountsview, ipaddressenview, MyHomeView, LoginView, LogoutMenuLink
+from .models_storage import server, applicatierollen, tenants, notities, ipregistratie, \
+    serverview, applicatierollenview, ipregistratieview, tenantsview, notitiesview, ServerOverview
 from .index import index
 import pymysql
 pymysql.install_as_MySQLdb()
@@ -16,8 +18,13 @@ from flask_ldap3_login.forms import LDAPLoginForm
 from flask_login import LoginManager, login_user, login_required, logout_user
 
 #Get logging configuration
-fileConfig("logging.config")
 logger=getLogger(__name__)
+logformat=Formatter('[%(asctime)s] %(levelname)s in %(name)s: %(message)s')
+streamhandler=StreamHandler()
+streamhandler.setFormatter(logformat)
+fileHandler=FileHandler(filename=Config.LOGFILE)
+fileHandler.setFormatter(logformat)
+basicConfig(level=Config.LOGLEVEL,handlers=[streamhandler,fileHandler])
 
 def create_app():
     app = Flask(__name__)
@@ -26,16 +33,24 @@ def create_app():
 
     #Initialize db
     db.init_app(app)
+    migrate.init_app(app, db)
+
     app.register_blueprint(index, url_prefix='/')
 
     admin.name='API Accounts'
     admin.init_app(app)
     configure_mappers()
     admin.index_view=MyHomeView
-    admin.add_view(groepview(groep,db.session, name='Groepen'))
-    admin.add_view(accountsview(accounts,db.session,name="Accounts"))
-    admin.add_view(ipaddressenview(ipadressen,db.session,name="IP Adressen"))
-    admin.add_view(groeprechtenview(groeprechten,db.session, name='Groep rechten'))
+    admin.add_view(groepview(groep,db.session, name='Groepen', category='IB Delegaties'))
+    admin.add_view(accountsview(accounts,db.session,name="Accounts", category='IB Delegaties'))
+    admin.add_view(ipaddressenview(ipadressen,db.session,name="IP Adressen", category='IB Delegaties'))
+    admin.add_view(groeprechtenview(groeprechten,db.session, name='Groep rechten', category='IB Delegaties'))
+    admin.add_view(serverview(server,db.session, name='Servers', category='IEGI VM'))
+    admin.add_view(applicatierollenview(applicatierollen,db.session, name='Applicatierollen', category='IEGI VM'))
+    admin.add_view(ipregistratieview(ipregistratie,db.session, name='IP Registraties', category='IEGI VM'))
+    admin.add_view(notitiesview(notities,db.session, name='Server notities', category='IEGI VM'))
+    admin.add_view(tenantsview(tenants,db.session, name='Tenants'))
+    admin.add_view(ServerOverview(name='Server overview',endpoint='serveroverview',url="/admin/serveroverview", category='IEGI VM'))
     admin.add_view(LoginView(name='Login',endpoint='login',url="/login"))
     admin.add_link(LogoutMenuLink(name='Logout', category='', url="/logout"))
 

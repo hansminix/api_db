@@ -2,6 +2,8 @@ class Config:
     SECRET_KEY = '91f594b33a0c6e72223bd60f04fe0c3525d5759b19dfd44c'
     #SQLALCHEMY_DATABASE_URI="mysql://ftrdb:Instruct3@localhost/ftrdb"
     SQLALCHEMY_DATABASE_URI='sqlite:////home/hnoordam/workspace/api_db/api_db.sqlite'
+    LOGLEVEL='DEBUG'
+    LOGFILE='/home/hnoordam/workspace/api_db/flask.log'
 
     #LDAP configuration
     # Hostname of your LDAP Server

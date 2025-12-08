@@ -5,3 +5,4 @@ flask.log
 audit.log
 ldaptest.py
 api_db.sqlite
+migrations

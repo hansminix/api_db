@@ -1,0 +1,31 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+{{ super() }}
+<form method="POST">
+<fieldset>
+    <div class="form-group">
+    <label class="col-form-label" for="Server" >
+        Server:         
+    </label>
+    {{form.serverselect(class_="form-control")}}
+    <input type="submit" class="btn btn-primary" value="Submit">
+</fieldset>
+</form>
+ <div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-2 col-form-label">
+      <p>Lorem ipsum...</p>
+    </div>
+    <div class="col-sm-4">
+      <p>Sed ut perspiciatis...</p>
+    </div>
+    <div class="col-sm-2 col-form-label">
+      <p>Lorem ipsum...</p>
+    </div>
+    <div class="col-sm-4">
+      <p>Sed ut perspiciatis...</p>
+    </div>
+  </div>
+</div> 
+{% endblock %}

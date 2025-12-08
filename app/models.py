@@ -98,6 +98,7 @@ class groepview(ModelView):
     can_export = True
     form_columns = ['name', 'owner','emailaddress','description','documentation','software']
     column_labels = dict(name='Naam',emailaddress='Mailadres',description='Omschrijving',owner='Eigenaar',documentation='Documentatie',software='Software')
+    column_filters = ('name',)
     form_args = {
         'name': { 'label': 'Naam' },
         'emailaddress': { 'label' : 'Mailadres','validators': [Email(message='Geen geldig mail adres')] },
@@ -171,7 +172,6 @@ class MyHomeView(AdminIndexView):
 class LoginView(BaseView):    
     @expose('/', methods=["GET","POST"])
     def index(self):
-        print(Config.LDAP_USER_LOGIN_ATTR)
         # Instantiate a LDAPLoginForm which has a validator to check if the user
         # exists in LDAP.
         form = LDAPLoginForm()
