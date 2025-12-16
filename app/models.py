@@ -10,6 +10,7 @@ from flask_ldap3_login.forms import LDAPLoginForm
 from flask_login import login_user, current_user
 from flask import redirect, url_for, request, flash
 
+
 # Declare an Object Model for the user, and make it comply with the
 # flask-login UserMixin mixin.
 class User(db.Model, UserMixin):
@@ -168,7 +169,7 @@ class MyHomeView(AdminIndexView):
     @expose('/')
     def index(self):
         return self.render('admin/index.html', current_user=current_user)
-
+    
 class LoginView(BaseView):    
     @expose('/', methods=["GET","POST"])
     def index(self):

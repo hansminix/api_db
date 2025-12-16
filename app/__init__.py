@@ -8,8 +8,8 @@ from sqlalchemy.orm import configure_mappers
 from .extensions import db, admin, migrate
 from .models import groep, groeprechten, accounts, ipadressen, User,\
     groepview, groeprechtenview, accountsview, ipaddressenview, MyHomeView, LoginView, LogoutMenuLink
-from .models_storage import server, applicatierollen, tenants, notities, ipregistratie, \
-    serverview, applicatierollenview, ipregistratieview, tenantsview, notitiesview, ServerOverview
+from .models_storage import server, applicatierollen, tenants, notities, ipregistratie, iegisid, \
+    serverview, applicatierollenview, ipregistratieview, tenantsview, notitiesview, ServerOverview, iegisidview
 from .index import index
 import pymysql
 pymysql.install_as_MySQLdb()
@@ -45,12 +45,13 @@ def create_app():
     admin.add_view(accountsview(accounts,db.session,name="Accounts", category='IB Delegaties'))
     admin.add_view(ipaddressenview(ipadressen,db.session,name="IP Adressen", category='IB Delegaties'))
     admin.add_view(groeprechtenview(groeprechten,db.session, name='Groep rechten', category='IB Delegaties'))
+    admin.add_view(ipregistratieview(ipregistratie,db.session, name='IP Registraties', category='IEGI VM'))
     admin.add_view(serverview(server,db.session, name='Servers', category='IEGI VM'))
     admin.add_view(applicatierollenview(applicatierollen,db.session, name='Applicatierollen', category='IEGI VM'))
-    admin.add_view(ipregistratieview(ipregistratie,db.session, name='IP Registraties', category='IEGI VM'))
     admin.add_view(notitiesview(notities,db.session, name='Server notities', category='IEGI VM'))
-    admin.add_view(tenantsview(tenants,db.session, name='Tenants'))
     admin.add_view(ServerOverview(name='Server overview',endpoint='serveroverview',url="/admin/serveroverview", category='IEGI VM'))
+    admin.add_view(tenantsview(tenants,db.session, name='Tenants', category='Tabellen'))
+    admin.add_view(iegisidview(iegisid,db.session, name='IEGISID', category='Tabellen'))
     admin.add_view(LoginView(name='Login',endpoint='login',url="/login"))
     admin.add_link(LogoutMenuLink(name='Logout', category='', url="/logout"))
 

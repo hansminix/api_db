@@ -3,29 +3,186 @@
 {% block body %}
 {{ super() }}
 <form method="POST">
+{{ form.csrf_token }}
 <fieldset>
     <div class="form-group">
-    <label class="col-form-label" for="Server" >
+    <label class="col-form-label" for="serverselect" >
         Server:         
     </label>
-    {{form.serverselect(class_="form-control")}}
-    <input type="submit" class="btn btn-primary" value="Submit">
+    {{form.serverselect(list="id_datalist")}}
+    <datalist id="id_datalist">
+    {% for name in servernames %}
+    <option value={{ name }}>
+    {% endfor %}
+    </datalist>
+    <input type="submit" class="btn btn-secondary" value="Submit">
 </fieldset>
 </form>
- <div class="container-fluid">
-  <div class="row">
-    <div class="col-sm-2 col-form-label">
-      <p>Lorem ipsum...</p>
+
+{% if serverdata %}
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-3">
+        <b>Eigenaar</b>
+      </div>
+      <div class="col-md-3">
+        <b>Email adres</b>
+      </div>
+      <div class="col-md-3">
+        <b>Status</b>
+      </div>
+      <div class="col-md-3">
+        <b>Omschrijving</b>
+      </div>
     </div>
-    <div class="col-sm-4">
-      <p>Sed ut perspiciatis...</p>
+    <div class="row">
+      <div class="col-md-3">
+        {{serverdata[0][0].eigenaar}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].email}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].status}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].omschrijving}}
+      </div>
     </div>
-    <div class="col-sm-2 col-form-label">
-      <p>Lorem ipsum...</p>
+    <div class="row">
+      <div class="col-md-3">
+        <b>Operating system</b>
+      </div>
+      <div class="col-md-3">
+        <b>CPU</b>
+      </div>
+      <div class="col-md-3">
+        <b>RAM</b>
+      </div>
+      <div class="col-md-3">
+        <b>Datum</b>
+      </div>
     </div>
-    <div class="col-sm-4">
-      <p>Sed ut perspiciatis...</p>
+    <div class="row ">
+      <div class="col-md-3">
+        {{serverdata[0][0].os}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].cpu}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].ram}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].datum}}
+      </div>
     </div>
+    <div class="row">
+      <div class="col-md-3">
+        <b>DMZ</b>
+      </div>
+      <div class="col-md-3">
+        <b>Tenant</b>
+      </div>
+      <div class="col-md-3">
+        <b>IEGISID</b>
+      </div>
+      <div class="col-md-3">        
+        <b>Applicatierollen</b>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3">
+        {{serverdata[0][0].dmz}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].tenant}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].iegisid}}
+      </div>
+      <div class="col-md-3">
+        {% for rol in appldata %}
+        {{ rol[1].applicatierol}}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3">
+        <b>Laatst bijgewerkt door</b>
+      </div>
+      <div class="col-md-3">
+        <b>Datum</b>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3">
+        {{serverdata[0][0].updated_by}}
+      </div>
+      <div class="col-md-3">
+        {{serverdata[0][0].last_updated}}
+      </div>
+    </div>
+    <p></p>
+    <div class="row">
+      <div class="col-md-3">
+        <b>IP Registraties</b>
+      </div>
+    </div>
+    <div class="row ">
+      <div class="col-md-3">
+        <b>Type</b>
+      </div>
+      <div class="col-md-3">
+        <b>IP Adres</b>
+      </div>
+      <div class="col-md-3">
+        <b>Gateway</b>
+      </div>
+      <div class="col-md-3">        
+        <b>VLAN</b>
+      </div>
+    </div>
+    {% for ip in ipdata %}
+    <div class="row ">
+      <div class="col-md-3">
+        {{ip[1].type}}
+      </div>
+      <div class="col-md-3">
+        {{ip[1].ipadres}}
+      </div>
+      <div class="col-md-3">
+        {{ip[1].gateway}}
+      </div>
+      <div class="col-md-3">        
+        {{ip[1].vlan}}
+      </div>
+    </div>
+    {% endfor %}
+    <p></p>
+    <div class="row">
+      <div class="col-md-3">
+        <b>Notities</b>
+      </div>
+    </div>
+    <div class="row ">
+      <div class="col-md-3">
+        <b>Datum</b>
+      </div>
+      <div class="col-md-3">
+        <b>Notitie</b>
+      </div>
+    </div>
+    {% for notitie in notitiesdata %}
+    <div class="row ">
+      <div class="col-md-3">
+        {{notitie[1].datum}}
+      </div>
+      <div class="col-md-9">
+        {{notitie[1].omschrijving}}
+      </div>
+    </div>
+    {% endfor %}
   </div>
-</div> 
+{% endif %}
 {% endblock %}
