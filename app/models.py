@@ -1,33 +1,37 @@
 from .extensions import db
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import AdminIndexView, expose, BaseView
-from .config import Config
 from wtforms.validators import Email
-from .config import Config
-from flask_login import UserMixin, current_user
+from .extensions import validateIBObject
 from flask_admin.menu import MenuLink
-from flask_ldap3_login.forms import LDAPLoginForm
-from flask_login import login_user, current_user
-from flask import redirect, url_for, request, flash
+from flask import redirect, url_for, request
+from flask_security import SQLAlchemyUserDatastore
+from flask_security.models.fsqla_v3 import FsRoleMixin, FsUserMixin, FsModels
+from flask_login import current_user
+from logging import getLogger
 
+#Create logger
+logger=getLogger(__name__)
 
-# Declare an Object Model for the user, and make it comply with the
-# flask-login UserMixin mixin.
-class User(db.Model, UserMixin):
-    cn = db.Column(db.String(50), primary_key=True)
-    dn = db.Column(db.String(255), unique=True)
-    data = db.Column(db.Text)
+#Set flask-security db model
+FsModels.set_db_info(db)
 
-    def __init__(self, cn=None, dn=None, data=None):
-        self.cn = cn
-        self.dn = dn
-        self.data = data
+class User(db.Model, FsUserMixin):
+    __tabel_name__='user'
+    name = db.Column(db.String(50),unique=True)
+    email = db.Column(db.String(50))
+
+    def __repr__(self):
+        return self.name 
 
     def get_id(self):
-        return self.cn
-    
-    def __repr__(self):
-        return self.cn
+        return self.name 
+
+class Role(db.Model, FsRoleMixin):
+    __tabel_name__='role'
+
+#Define userdatastore for Flask security
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
 class groep(db.Model):
     __table_name__ = 'groep'
@@ -38,6 +42,8 @@ class groep(db.Model):
     emailaddress = db.Column(db.String(100), nullable=False)
     documentation = db.Column(db.Text)
     software = db.Column(db.String(100), nullable=False)
+    accesstype = db.Column(db.String(10), nullable=False)
+    adgroep = db.Column(db.Boolean, default=False)
     
     def __repr__(self):
         return self.name 
@@ -50,22 +56,17 @@ class accounts(db.Model):
     groep_id = db.Column(db.Integer, db.ForeignKey('groep.id'), nullable=False)  # Relatie naar groep
     groep = db.relationship('groep', backref=db.backref('accounts', lazy=True))
 
-
     def __repr__(self):
         return self.name
 
-class groeprechten(db.Model):
-    __table_name__ = 'groeprechten'
+class groeprecht(db.Model):
+    __table_name__ = 'groeprecht'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    object_name = db.Column(db.String(100), nullable=False)
-    object_type = db.Column(db.String(100), nullable=False)
-    object_sub = db.Column(db.String(100))
-    rwrechten = db.Column(db.String(25), nullable=False)
+    object = db.Column(db.String(100), nullable=False) #Naam van zone, netwerk etc.
+    permission = db.Column(db.String(25), nullable=False) #READ, WRITE, DENY
     groep_id = db.Column(db.Integer, db.ForeignKey('groep.id'), nullable=False)  # Relatie naar groep
     groep = db.relationship('groep', backref=db.backref('groeprechten', lazy=True))  # Relatie naar groep
-
-    def __repr__(self):
-        return f'{self.name}'
+    resource_type_id = db.Column(db.Integer, db.ForeignKey('resource_type.id'))
 
 class ipadressen(db.Model):
     __table_name__ = 'ipadressen'
@@ -75,30 +76,46 @@ class ipadressen(db.Model):
     groep = db.relationship('groep', backref=db.backref('ipadressen', lazy=True))
     
     def __repr__(self):
+        return f"{self.ipaddress}"
+
+class resource_type(db.Model):
+    __table_name__ = 'resource_type'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(50), nullable=False)
+    groeprechten = db.relationship('groeprecht', backref='resource_type')
+
+    def __repr__(self):
         return f"{self.name}"
 
-"""
-class objecttypes(db.Model):
-    __table_name__ = 'objectnames'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(100), nullable=False)
-
-class object_subtypes(db.Model):
-    __table_name__ = 'object_subtypes'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(100), nullable=False)
-"""
-class groepview(ModelView):
+class resource_typeview(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated  # eventueel ook rollen checken
+        return current_user.has_role('admin')  # eventueel ook rollen checken
 
     def inaccessible_callback(self, name, **kwargs):
         # Redirect naar login pagina
         return redirect(url_for('login.index', next=request.url))    
 
     can_export = True
-    form_columns = ['name', 'owner','emailaddress','description','documentation','software']
-    column_labels = dict(name='Naam',emailaddress='Mailadres',description='Omschrijving',owner='Eigenaar',documentation='Documentatie',software='Software')
+    form_columns = ['name']
+    column_labels = dict(name='Naam')
+    column_filters = ('name',)
+    form_args = {
+        'name': { 'label': 'Naam' }
+        }
+
+
+class groepview(ModelView):
+    def is_accessible(self):
+        return current_user.has_role('admin')  # eventueel ook rollen checken
+
+    def inaccessible_callback(self, name, **kwargs):
+        # Redirect naar login pagina
+        return redirect(url_for('login.index', next=request.url))    
+
+    can_export = True
+    form_columns = ['name', 'owner','emailaddress','description','documentation','software','accesstype', 'adgroep']
+    column_labels = dict(name='Naam',emailaddress='Mailadres',description='Omschrijving',owner='Eigenaar',documentation='Documentatie',software='Software',
+                         accesstype='Access type', adgroep='AD Groep')
     column_filters = ('name',)
     form_args = {
         'name': { 'label': 'Naam' },
@@ -106,12 +123,20 @@ class groepview(ModelView):
         'description': { 'label': 'Omschrijving'},
         'owner': { 'label': 'Eigenaar'},
         'documentation': { 'label': 'Documentatie'},
-        'software': { 'label': 'Software'}
+        'software': { 'label': 'Software'},
+        'accesstype': { 'label': 'Access type'},
+        'adgroep' : { 'label': 'AD Groep'}
         }
+    form_choices = {
+        'accesstype': [
+            ('GUI', 'GUI'),
+            ('API', 'API')
+        ]
+    }
 
 class accountsview(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated  # eventueel ook rollen checken
+        return current_user.has_role('admin')  # eventueel ook rollen checken
 
     def inaccessible_callback(self, name, **kwargs):
         # Redirect naar login pagina
@@ -127,31 +152,29 @@ class accountsview(ModelView):
         'groep' : { 'label': 'Groep'},
         }
 
-class groeprechtenview(ModelView):
+class groeprechtview(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated  # eventueel ook rollen checken
+        return current_user.has_role('admin')  # eventueel ook rollen checken
 
     def inaccessible_callback(self, name, **kwargs):
         # Redirect naar login pagina
         return redirect(url_for('login.index', next=request.url))    
 
     can_export = True
-    form_columns = ['object_name','object_type', 'object_sub', 'rwrechten','groep']
-    column_labels = dict(object_name='Object',object_type='Type object',object_sub='Subtype',rwrechten='Read/write',groep='Groep')
-    column_filters = ('object_name','object_type','object_sub','rwrechten','groep')
+    form_columns = ['object','resource_type', 'permission','groep']
+    column_labels = dict(object='Object',resource_type='Resource type',permission='Read/write',groep='Groep')
+    column_filters = ('object','resource_type','permission','groep')
     form_args = {
-        'object_name' : { 'label': 'Object'},
-        'object_type' :  { 'label': 'Type object'},
-        'object_sub':  { 'label': 'Subtype'},
-        'rwrechten':  { 'label': 'Read/write'},
+        'object' : { 'label': 'Object'},
+        'resource_type' :  { 'label': 'Resource type'},
+        'permission':  { 'label': 'Read/write'},
         'groep':  { 'label': 'Groep'},
         }
-    form_choices = {'rwrechten': [('READ', 'READ'), ('WRITE', 'WRITE'), ('DENY', 'DENY')], 'object_type': Config.object_types,
-                    'object_sub': Config.object_subtypes}
+    form_choices = {'permission': [('READ', 'READ'), ('WRITE', 'WRITE'), ('DENY', 'DENY')]}
 
 class ipaddressenview(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated  # eventueel ook rollen checken
+        return current_user.has_role('admin')  # eventueel ook rollen checken
 
     def inaccessible_callback(self, name, **kwargs):
         # Redirect naar login pagina
@@ -165,33 +188,12 @@ class ipaddressenview(ModelView):
         'groep' : { 'label': 'Groep'},
         }
 
+
 class MyHomeView(AdminIndexView):
     @expose('/')
     def index(self):
         return self.render('admin/index.html', current_user=current_user)
     
-class LoginView(BaseView):    
-    @expose('/', methods=["GET","POST"])
-    def index(self):
-        # Instantiate a LDAPLoginForm which has a validator to check if the user
-        # exists in LDAP.
-        form = LDAPLoginForm()
-
-        if form.validate_on_submit():
-            # Successfully logged in, We can now access the saved user object
-            # via form.user.
-            login_user(form.user)  # Tell flask-login to log them in.
-            flash("U bent succesvol ingelogd.")
-            return redirect('/admin')  # Send them home
-        if form.errors:
-            flash('Fout bij inloggen, probeer opnieuw.', 'error')
-
-        return self.render('admin/login.html',form=form)
-
-    def is_accessible(self):
-        return not current_user.is_authenticated 
-
-
 class LoginMenuLink(MenuLink):
 
     def is_accessible(self):
@@ -203,20 +205,7 @@ class LogoutMenuLink(MenuLink):
     def is_accessible(self):
         return current_user.is_authenticated             
 
-"""
-class objecttypesview(ModelView):
-    can_export = True
-    form_columns = ['name']
-    column_labels = dict(name='Naam')
-    form_args = {
-        'name': { 'label': 'Naam'},
-        }
+class HomeMainLink(MenuLink):
 
-class object_subtypesview(ModelView):
-    can_export = True
-    form_columns = ['name']
-    column_labels = dict(name='Naam')
-    form_args = {
-        'name': { 'label': 'Naam'},
-        }
-"""
+    def is_accessible(self):
+        return current_user.is_authenticated             

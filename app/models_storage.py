@@ -1,15 +1,13 @@
 from .extensions import db
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.contrib.sqla.form import InlineOneToOneModelConverter, InlineFormAdmin
 from flask_admin import AdminIndexView, expose, BaseView
 from flask_admin.form import rules
 from .config import Config
 from wtforms.validators import Email, DataRequired
 from wtforms import SelectField, StringField
 from flask_wtf import FlaskForm
-from .config import Config
-from flask_login import UserMixin, current_user
-from flask_admin.menu import MenuLink
-from flask_login import login_user, current_user
+from flask_login import current_user
 from flask import redirect, url_for, request, flash
 from datetime import datetime
 
@@ -46,7 +44,7 @@ class server(db.Model):
     last_updated = db.Column(db.DateTime(), default=datetime.now(), onupdate=datetime.now)
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'))
     iegisid_id = db.Column(db.Integer, db.ForeignKey('iegisid.id'))
-    notities = db.relationship('notities', backref='server')
+    notities = db.relationship('notities', back_populates='server')
     ipregistratie = db.relationship('ipregistratie', backref='server')
     # Many-to-many relatie
     applicatierollen = db.relationship('applicatierollen',secondary=server_applicatierollen, backref=db.backref('servers'), lazy='dynamic')
@@ -92,7 +90,9 @@ class notities(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     omschrijving= db.Column(db.Text)
     datum= db.Column(db.Date, default=datetime.now())
-    server_id = db.Column(db.String, db.ForeignKey('server.id'), nullable=False)  # Relatie naar server
+    updated_by=db.Column(db.String)
+    server_id = db.Column(db.Integer, db.ForeignKey('server.id', ondelete='CASCADE'), nullable=False)  # Relatie naar server
+    server=db.relationship('server',back_populates='notities')
 
 class ipregistratieview(ModelView):
     def is_accessible(self):
@@ -121,6 +121,32 @@ class ipregistratieview(ModelView):
     ]
     form_create_rules = form_edit_rules
 
+
+class notitiesview(ModelView):
+
+    def is_accessible(self):
+        return current_user.is_authenticated  # eventueel ook rollen checken
+
+    def inaccessible_callback(self, name, **kwargs):
+        # Redirect naar login pagina
+        return redirect(url_for('login.index', next=request.url))    
+
+    can_export = True
+    can_edit = False
+    can_delete = False
+    form_columns = ['server','omschrijving']
+    column_filters = ('server', 'datum')
+    column_labels = dict(server='Server',datum='Datum',omschrijving='Omschrijving')
+    column_list = ['server', 'datum', 'omschrijving']
+    form_args = {
+        'server': { 'label': 'Server', 'validators': [DataRequired()] },
+        'omschrijving': { 'label': 'Omschrijving', 'validators': [DataRequired()]},
+        }
+
+class InlineNotities(InlineFormAdmin):
+    form_columns = ('datum', 'omschrijving')
+    inline_converter = InlineOneToOneModelConverter
+
 class serverview(ModelView):
     def is_accessible(self):
         return current_user.is_authenticated  # eventueel ook rollen checken
@@ -129,6 +155,7 @@ class serverview(ModelView):
         # Redirect naar login pagina
         return redirect(url_for('login.index', next=request.url))    
     
+    inline_models = (notities,)
     can_export = True
     form_columns = ['naam', 'eigenaar','email','omschrijving','status','os','cpu','ram', 'dmz','applicatierollen','tenant','iegisid','last_updated','updated_by']
     column_list = ['naam','eigenaar', 'status','dmz', 'omschrijving']
@@ -153,17 +180,36 @@ class serverview(ModelView):
         'applicatierollen': { 'label': 'Applicatierollen'},
         'tenant': { 'label': 'Tenant', 'validators': [DataRequired()]},
         'iegisid': { 'label': 'IEGISID', 'validators': [DataRequired()]},
-        'last_updated': { 'label': 'Bijgewerkt op'},
-        'updated_by': { 'label': 'Bijgewerkt door'}
+        'last_updated': { 'label': 'Bijgewerkt op', 'render_kw':{'readonly': True}},
+        'updated_by': { 'label': 'Bijgewerkt door', 'render_kw':{'readonly': True}}
         }
     
+    form_widget_args = {
+        'naam': {'class': 'col-md-3'},
+        'eigenaar': {'class': 'col-md-3'},
+        'email': {'class': 'col-md-3'},
+        'status': {'class': 'col-md-3'},
+        'omschrijving': {'class': 'col-md-3'},
+        'os': {'class': 'col-md-3'},
+        'ram': {'class': 'col-md-3'},
+        'cpu': {'class': 'col-md-3'},
+        'dmz': {'class': 'col-md-3'},
+        'applicatierollen': {'class': 'col-md-3'},
+        'tenant': {'class': 'col-md-3'},
+        'iegisid': {'class': 'col-md-3'},
+        'last_updated': {'class': 'col-md-3'},
+        'updated_by': {'class': 'col-md-3'},
+        'notities': {'class': 'col-md-12'},
+
+    }
     form_choices = {'status': [('Nieuw', 'Nieuw'), ('Actief', 'Actief'), ('Verwijderd', 'Verwijderd')], 'dmz': [('Frontend', 'Frontend'), ('Intermediate', 'Intermediate'), ('Backend', 'Backend')] }
 
     form_edit_rules = [
         rules.Row('naam','eigenaar','email','status'),
         rules.Row('omschrijving','os','ram','cpu'),
         rules.Row('dmz','applicatierollen','tenant'),
-        rules.Row('iegisid','last_updated','updated_by')
+        rules.Row('iegisid','last_updated','updated_by'),
+        rules.Row('notities')
     ]
     form_create_rules = form_edit_rules
 
@@ -223,27 +269,6 @@ class iegisidview(ModelView):
         }
 
 
-class notitiesview(ModelView):
-
-    def is_accessible(self):
-        return current_user.is_authenticated  # eventueel ook rollen checken
-
-    def inaccessible_callback(self, name, **kwargs):
-        # Redirect naar login pagina
-        return redirect(url_for('login.index', next=request.url))    
-
-    can_export = True
-    can_edit = False
-    can_delete = False
-    form_columns = ['server','omschrijving']
-    #column_display_pk = True
-    column_labels = dict(server='Server',datum='Datum',omschrijving='Omschrijving')
-    column_list = ['server', 'datum', 'omschrijving']
-    form_args = {
-        'server': { 'label': 'Server', 'validators': [DataRequired()] },
-        'omschrijving': { 'label': 'Omschrijving', 'validators': [DataRequired()]},
-        }
-
 class ServerView(FlaskForm):
 
     #serverselect = SelectField(u'Select server', validate_choice=False)
@@ -285,3 +310,9 @@ class ServerOverview(BaseView):
     def inaccessible_callback(self, name, **kwargs):
         # Redirect naar login pagina
         return redirect(url_for('login.index', next=request.url))    
+
+class MsiLinkPageview(BaseView):    
+    @expose('/', methods=["GET"])
+    def index(self):
+        return self.render('admin/urllink.html')
+

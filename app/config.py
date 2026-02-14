@@ -4,7 +4,8 @@ class Config:
     SQLALCHEMY_DATABASE_URI='sqlite:////home/hnoordam/workspace/api_db/api_db.sqlite'
     LOGLEVEL='DEBUG'
     LOGFILE='/home/hnoordam/workspace/api_db/flask.log'
-
+    AUDIT_LOGFILE='/home/hnoordam/workspace/api_db/audit.log'
+    
     #LDAP configuration
     # Hostname of your LDAP Server
     LDAP_HOST = 'localhost'
@@ -30,7 +31,15 @@ class Config:
 
     # The Password to bind to LDAP with
     LDAP_BIND_USER_PASSWORD = None
+    LDAP_SEARCH_GROUPS='groupattribute' #userattribute or groupattribute
+    LDAP_GROUP_ATTRIBUTE='member'
+    LDAP_MAIL_ATTRIBUTE='mail'
 
+    GROUP_ROLE_MAP={'cn=ontwerp,ou=Groups,dc=hans,dc=home':'admin'}
+
+    HIDE_LOG_DATA = ['password','csrf_token']
+
+    """
     ACCES_GROUPS=['v5siabeheer']
     object_types=[]
     object_subtypes=[]
@@ -40,4 +49,4 @@ class Config:
     with open('object_subtypes.txt') as of:
         for line in of:
             object_subtypes.append((line.strip(), line.strip()))
-    
+    """    

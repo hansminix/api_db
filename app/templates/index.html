@@ -1,7 +1,7 @@
-<html>
-  <head>
-    <meta http-equiv="refresh" content="0;url=/admin" />
-    <title></title>
-  </head>
- <body></body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+{% if current_user.is_authenticated %}
+<h3>U bent ingelogd als {{ current_user }}.</h3>
+{% endif %}
+{% endblock %}

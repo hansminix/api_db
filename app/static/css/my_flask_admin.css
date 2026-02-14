@@ -1,44 +1,15 @@
-/* Reduce vertical spacing between form groups */
-.form-group {
-    margin-bottom: 2px !important;
+.gridhead {
+  position: sticky;
+  top: 0;
+  background: #f0f0f0;
+  color: #000;
+  font-weight: bold;
+  z-index: 10;
 }
 
-/* Reduce padding inside form fields */
-.form-control {
-    padding: 2px 3px !important;
+.row-striped:nth-child(odd) {
+  background-color: #f1f1f1;
 }
-
-/* Tighten label spacing */
-.control-label {
-    margin-bottom: 1px !important;
-}
-
-/* Reduce spacing on form panels */
-.panel-body {
-    padding: 5px !important;
-}
-
-/* Reduce padding on col-form-label */
-.col-form-label {
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
-}
-
-.table {
-    width: 100%;
-    margin-bottom: 1px;
-    color: #212529;
-}
-
-.table th {
-    padding: 2px;
-}
-
-.table td {
-    padding: 2px;
-}
-
-.col {
-    flex: 0 0 25%;
-    max-width: 25%;
+.row-striped:nth-child(even) {
+  background-color: #e1e1e1;
 }
