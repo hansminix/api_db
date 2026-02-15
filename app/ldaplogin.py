@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo
-from ldap3 import Server, Connection, ALL, ALL_ATTRIBUTES
+from ldap3 import Server, Connection, ALL, ALL_ATTRIBUTES, Tls
 from ldap3.core.exceptions import LDAPBindError
 from .config import Config
 from logging import getLogger
@@ -21,7 +21,11 @@ class ldapLogin():
             server = Server(Config.LDAP_HOST, get_info=ALL)
             self.cn=userid
             self.userdn=f"{Config.LDAP_USER_RDN_ATTR}={userid},{Config.LDAP_USER_DN},{Config.LDAP_BASE_DN}"
-            conn = Connection(server, self.userdn, password, auto_bind=True)
+            if Config.LDAP_TLS:
+                tls = Tls(ca_certs_file=Config.LDAP_CA_FILE,version=Config.LDAP_TLS_VERSION)
+                conn = Connection(server, self.userdn, password, auto_bind=True, tls=tls)
+            else:
+                conn = Connection(server, self.userdn, password, auto_bind=True)
         except LDAPBindError as e:
             print("Authentication failed.")
             return False

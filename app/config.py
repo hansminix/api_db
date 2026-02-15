@@ -1,3 +1,5 @@
+import ssl
+
 class Config:
     SECRET_KEY = '91f594b33a0c6e72223bd60f04fe0c3525d5759b19dfd44c'
     #SQLALCHEMY_DATABASE_URI="mysql://ftrdb:Instruct3@localhost/ftrdb"
@@ -34,7 +36,9 @@ class Config:
     LDAP_SEARCH_GROUPS='groupattribute' #userattribute or groupattribute
     LDAP_GROUP_ATTRIBUTE='member'
     LDAP_MAIL_ATTRIBUTE='mail'
-
+    LDAP_TLS=False
+    LDAP_CA_FILE='CA'
+    LDAP_TLS_VERSION=ssl.PROTOCOL_TLSv1_2
     GROUP_ROLE_MAP={'cn=ontwerp,ou=Groups,dc=hans,dc=home':'admin'}
 
     HIDE_LOG_DATA = ['password','csrf_token']
