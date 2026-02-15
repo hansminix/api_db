@@ -27,7 +27,7 @@ class ldapLogin():
             else:
                 conn = Connection(server, self.userdn, password, auto_bind=True)
         except LDAPBindError as e:
-            print("Authentication failed.")
+            logger.error(f"Authentication failed for {userid}.")
             return False
         except Exception as e:
             logger.error(f"Onbekende fout bij inloggen: {e}")
