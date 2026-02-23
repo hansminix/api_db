@@ -1,16 +1,17 @@
-{% extends 'base.html' %}
+{% extends 'admin/master.html' %}
 
-{% block content %}
+{% block body %}
+{{ super() }}
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-2">
-            <div class="w-100"><a href="/overzicht/0/"> Verlopen accounts</a></div>
+            <div class="w-100"><a href="{{url_for('listapiview.index')}}?filter=0"> Verlopen accounts</a></div>
         </div>
         <div class="col-md-2">
-            <div class="w-100"><a href="/overzicht/7/"> Verlopen binnen 7 dagen</a></div>
+            <div class="w-100"><a href="{{url_for('listapiview.index')}}?filter=7"> Verlopen binnen 7 dagen</a></div>
         </div>
         <div class="col-md-2">
-            <div class="w-100"><a href="/overzicht/30/"> Verlopen binnen 30 dagen</a></div>
+            <div class="w-100"><a href="{{url_for('listapiview.index')}}?filter=30"> Verlopen binnen 30 dagen</a></div>
         </div>
         <div class="col-md-6">
         </div>

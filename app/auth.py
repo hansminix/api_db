@@ -1,6 +1,6 @@
 from flask_admin import expose, BaseView
-from flask import flash, redirect
-from flask_login import current_user, login_user
+from flask import flash, redirect, url_for
+from flask_login import current_user, login_user, logout_user
 from .config import Config
 from .config import Config
 from .ldaplogin import ldapLogin, ldapLoginForm
@@ -64,3 +64,11 @@ class LoginView(BaseView):
     def is_accessible(self):
         return not current_user.is_authenticated 
 
+class LogoutView(BaseView):    
+    @expose('/', methods=["GET","POST"])
+    def index(self):
+        logout_user()
+        return redirect(url_for('admin.index'))
+    
+    def is_accessible(self):
+        return current_user.is_authenticated 

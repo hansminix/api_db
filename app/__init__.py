@@ -1,20 +1,23 @@
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, url_for
 from .config import Config
 from logging import getLogger, basicConfig, FileHandler, StreamHandler, Formatter
 from sqlalchemy.orm import configure_mappers
 from flask_security import Security
 from flask_security.core import AnonymousUser
-from .extensions import db, admin, migrate
-from .models import groep, groeprecht, accounts, ipadressen, User, Role, resource_type, resource_typeview, \
-    groepview, groeprechtview, accountsview, ipaddressenview, user_datastore, MyHomeView, LogoutMenuLink, HomeMainLink
-from .auth import LoginView
+from flask_admin import Admin, AdminIndexView, expose
+from .extensions import db, migrate
+from .models import groep, groeprecht, accounts, ipadressen, User, Role, user_datastore, resource_type
+from .views import resource_typeview, groepview, groeprechtview, accountsview, ipaddressenview, MyHomeView, \
+    LogoutMenuLink, HomeMainLink, ListAPIView
+from .auth import LoginView, LogoutView
+
 #from .models_storage import server, applicatierollen, tenants, notities, ipregistratie, iegisid, \
 #    serverview, applicatierollenview, ipregistratieview, tenantsview, notitiesview, ServerOverview, iegisidview, MsiLinkPageview
 from .index import index
-from .lists import overzicht
+#rom .lists import overzicht
 from flask_login import LoginManager, login_required, logout_user, current_user
 from datetime import datetime
-from flask import current_app
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 #Get logging configuration
 logger=getLogger(__name__)
@@ -26,9 +29,25 @@ fileHandler.setFormatter(logformat)
 basicConfig(level=Config.LOGLEVEL,handlers=[streamhandler,fileHandler])
 app = Flask(__name__)
 
+class MyAdminIndexView(AdminIndexView):
+    @expose('/')
+    def index(self):
+        # Custom logic here
+        #return super().index()
+        #@expose('/')
+    #def index(self):
+        return self.render('admin/index.html', current_user=current_user)
+
+
+    def is_visible(self):
+        return False  # This hides the Home button from the menu
+
+
 def create_app():
     #Configuration from object, file config.py
     app.config.from_object(Config)
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     #Initialize db
     db.init_app(app)
@@ -37,14 +56,21 @@ def create_app():
     # Setup Flask-Security
     security = Security(app, user_datastore)
 
-    app.register_blueprint(index, url_prefix='/')
-    app.register_blueprint(overzicht, url_prefix='/')
+    #app.register_blueprint(index, url_prefix='/')
+    #app.register_blueprint(overzicht, url_prefix='/')
 
-    admin.name='API Accounts'
-    admin.init_app(app)
+    admin = Admin(
+        app,
+        name='API Accounts',
+        index_view=MyAdminIndexView(url='/api-db', endpoint='api-db')
+    )
+
+    #admin.name='API Accounts'
+    #admin.init_app(app)
     configure_mappers()
-    admin.index_view=MyHomeView
-    admin.add_link(HomeMainLink(name='Main Menu', category='', url="/"))
+    admin.add_view(ListAPIView(name='Overzicht'))
+    #admin.index_view=MyHomeView()
+    #admin.add_link(HomeMainLink(name='Main Menu', category='', url="{{url_for('/')}}"))
     #admin.add_view(MsiLinkPageview(name='MSI URL link pagina',endpoint='msilinkpage',url="/admin/msilinkpageview"))
     admin.add_view(groepview(groep,db.session, name='Groepen', category='Infoblox delegatie'))
     admin.add_view(accountsview(accounts,db.session,name="Accounts", category='Infoblox delegatie'))
@@ -58,8 +84,8 @@ def create_app():
     #admin.add_view(ServerOverview(name='Server overview',endpoint='serveroverview',url="/admin/serveroverview", category='IEGI VM'))
     #admin.add_view(tenantsview(tenants,db.session, name='Tenants', category='Tabellen'))
     #admin.add_view(iegisidview(iegisid,db.session, name='IEGISID', category='Tabellen'))
-    admin.add_view(LoginView(name='Login',endpoint='login',url="/login"))
-    admin.add_link(LogoutMenuLink(name='Logout', category='', url="/logout"))
+    admin.add_view(LoginView(name='Login'))
+    admin.add_view(LogoutView(name='Logout'))
     
     #Initialize flask login
     login_manager = LoginManager()
@@ -77,10 +103,8 @@ def create_app():
             return None
     logger.debug("Application started")
 
-    @app.route('/logout',methods=['GET', 'POST'])
-    @login_required
-    def logout():
-        logout_user()
+    @app.route('/',methods=['GET', 'POST'])
+    def home():
         return redirect('/admin')
 
     with app.app_context():

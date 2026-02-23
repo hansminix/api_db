@@ -6,3 +6,6 @@ audit.log
 ldaptest.py
 api_db.sqlite
 migrations
+__pycache__/
+instance
+.gitignore

@@ -6,7 +6,7 @@ from ipaddress import IPv4Network, IPv6Network, NetmaskValueError
 import re
 
 db = SQLAlchemy()
-admin=Admin()
+#admin=Admin()
 migrate=Migrate()
 
 def validateIBObject(form, field):

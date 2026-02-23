@@ -1,6 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'admin/master.html' %}
 
-{% block content %}
+{% block body %}
+{{ super() }}
 {% if current_user.is_authenticated %}
 <h3>U bent ingelogd als {{ current_user }}.</h3>
 {% endif %}
